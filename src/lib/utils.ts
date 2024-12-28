@@ -2,6 +2,9 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
+import "@/app.css"
+import type { FillLayerSpecification } from "mapbox-gl";
+import { COLORS } from "./color";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -60,3 +63,9 @@ export const flyAndScale = (
 		easing: cubicOut
 	};
 };
+
+export const fillLayerPaint: FillLayerSpecification['paint'] = {
+	'fill-outline-color': COLORS.primary,
+	'fill-color': COLORS.secondary,
+	'fill-opacity': 0.7
+}
