@@ -94,15 +94,15 @@
 						.addTo(map);
 				}
 
-				map.addLayer({
-					id: 'line-bounding-box',
-					type: 'fill',
-					paint: fillLayerPaint,
-					source: {
-						type: 'geojson',
-						data: AUS_SA
-					}
-				});
+				// map.addLayer({
+				// 	id: 'line-bounding-box',
+				// 	type: 'fill',
+				// 	paint: fillLayerPaint,
+				// 	source: {
+				// 		type: 'geojson',
+				// 		data: AUS_SA
+				// 	}
+				// });
 			});
 		} catch (error) {
 			console.error('Error loading Mapbox:', error);
@@ -118,7 +118,7 @@
 <div class="flex min-h-full flex-col gap-4">
 	<h1>UI Library</h1>
 
-	<div id="map" bind:this={mapContainer} class="absolute h-full w-full flex-1"></div>
+	<div id="map" bind:this={mapContainer} class="h-full w-full flex-1"></div>
 </div>
 
 <style>
