@@ -4,9 +4,7 @@
 	import github from '$lib/images/github.svg';
 </script>
 
-<header class="flex mx-auto">
-
-
+<header class="mx-auto flex">
 	<nav class="flex justify-center">
 		<svg viewBox="0 0 2 3" aria-hidden="true">
 			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
@@ -18,6 +16,9 @@
 			<li aria-current={$page.url.pathname === '/ui' ? 'page' : undefined}>
 				<a href="/ui">UI</a>
 			</li>
+			<li aria-current={$page.url.pathname === '/map' ? 'page' : undefined}>
+				<a href="/map">Map</a>
+			</li>
 			<li aria-current={$page.url.pathname.startsWith('/sverdle') ? 'page' : undefined}>
 				<a href="/sverdle">Sverdle</a>
 			</li>
@@ -26,7 +27,6 @@
 			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
 		</svg>
 	</nav>
-
 </header>
 
 <style>

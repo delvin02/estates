@@ -10,7 +10,7 @@
 <div class="flex min-h-screen flex-col">
 	<Header />
 
-	<main class="mx-auto my-0 box-border flex w-full max-w-[64rem] flex-1 flex-col p-4">
+	<main class="mx-auto my-0 box-border flex w-full flex-1 flex-col p-4">
 		{@render children()}
 	</main>
 
