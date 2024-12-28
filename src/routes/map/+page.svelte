@@ -4,13 +4,15 @@
 	import Icon from '@iconify/svelte';
 	import type { LngLatLike } from 'mapbox-gl';
 	import 'mapbox-gl/dist/mapbox-gl.css';
-
+	import { fillLayerPaint } from '$lib/utils';
+	import { AUS_SA } from '$lib/resources/map/sa.ts';
 	interface Pinpoint {
 		id: number;
 		coordinates: [number, number];
 		title: string;
 		menuItems: string[];
 	}
+
 	const geojson = {
 		type: 'FeatureCollection',
 		features: [
@@ -52,7 +54,6 @@
 			return;
 		}
 
-		// Dynamically import Mapbox GL JS
 		try {
 			const mapboxglModule = await import('mapbox-gl');
 			const mapboxgl = mapboxglModule.default;
@@ -62,9 +63,9 @@
 			const map = new mapboxgl.Map({
 				container: mapContainer,
 				style: 'mapbox://styles/delvin02/cm54y8h6t00i301rj2nif6b2a',
-				center: [-96, 37.8],
-				zoom: 3
-				// attributionControl: false
+				center: [138.582080438000048, -34.915374045999954],
+				zoom: 12,
+				attributionControl: true
 			});
 
 			map.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -92,6 +93,16 @@
 						)
 						.addTo(map);
 				}
+
+				map.addLayer({
+					id: 'line-bounding-box',
+					type: 'fill',
+					paint: fillLayerPaint,
+					source: {
+						type: 'geojson',
+						data: AUS_SA
+					}
+				});
 			});
 		} catch (error) {
 			console.error('Error loading Mapbox:', error);
