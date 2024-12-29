@@ -8,7 +8,8 @@ const config: Config = {
 	darkMode: ["class"],
 	content: ["./src/**/*.{html,js,svelte,ts}"],
 	safelist: ["dark"],
-	plugins: [typography, forms, containerQueries],
+		plugins: [typography, forms, containerQueries],
+
 	theme: {
 		container: {
 			center: true,
