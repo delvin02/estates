@@ -1,0 +1,21 @@
+{
+	"/": [
+		"src/routes/+page.ts"
+	],
+	"/demo": [],
+	"/demo/lucia": [
+		"src/routes/demo/lucia/+page.server.ts"
+	],
+	"/demo/lucia/login": [
+		"src/routes/demo/lucia/login/+page.server.ts"
+	],
+	"/sverdle": [
+		"src/routes/sverdle/+page.server.ts"
+	],
+	"/sverdle/how-to-play": [
+		"src/routes/sverdle/how-to-play/+page.ts"
+	],
+	"/ui": [
+		"src/routes/ui/+page.ts"
+	]
+}

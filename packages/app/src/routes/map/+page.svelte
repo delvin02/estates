@@ -64,42 +64,37 @@
 				style: 'mapbox://styles/delvin02/cm54y8h6t00i301rj2nif6b2a',
 				center: [138.582080438000048, -34.915374045999954],
 				zoom: 12,
-				attributionControl: true
 			});
 
 			map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-			map.addControl(
-				new mapboxgl.AttributionControl({
-					customAttribution: 'Designed by Delvin'
-				})
-			);
 
 			map.on('load', () => {
-				// for (const feature of geojson.features) {
-				// 	// Create a custom marker element
-				// 	const markerEl = document.createElement('div');
-				// 	markerEl.className = 'custom-marker';
-				// 	new mapboxgl.Marker({
-				// 		element: markerEl
-				// 	})
-				// 		.setLngLat(feature.geometry.coordinates)
-				// 		.setPopup(
-				// 			new mapboxgl.Popup({ offset: 25 }).setHTML(`
-				// 				<h3 class="font-bold">${feature.properties.title}</h3>
-				// 				<p>${feature.properties.description}</p>
-				// 			`)
-				// 		)
-				// 		.addTo(map);
-				// }
-				// map.addLayer({
-				// 	id: 'line-bounding-box',
-				// 	type: 'fill',
-				// 	paint: fillLayerPaint,
-				// 	source: {
-				// 		type: 'geojson',
-				// 		data: AUS_SA
-				// 	}
-				// });
+				console.log(map);
+				for (const feature of geojson.features) {
+					// Create a custom marker element
+					const markerEl = document.createElement('div');
+					markerEl.className = 'custom-marker';
+					new mapboxgl.Marker({
+						element: markerEl
+					})
+						.setLngLat(feature.geometry.coordinates)
+						.setPopup(
+							new mapboxgl.Popup({ offset: 25 }).setHTML(`
+								<h3 class="font-bold">${feature.properties.title}</h3>
+								<p>${feature.properties.description}</p>
+							`)
+						)
+						.addTo(map);
+				}
+				map.addLayer({
+					id: 'line-bounding-box',
+					type: 'fill',
+					paint: fillLayerPaint,
+					source: {
+						type: 'geojson',
+						data: AUS_SA
+					}
+				});
 			});
 		} catch (error) {
 			console.error('Error loading Mapbox:', error);
@@ -115,10 +110,10 @@
 <div class="flex min-h-full flex-col gap-4">
 	<h1>Map</h1>
 
-	<div id="map" bind:this={mapContainer} class="h-full w-full"></div>
+	<div id="map" bind:this={mapContainer} class=" max-h-full h-96 w-full"></div>
 </div>
 
-<!-- <style>
+<style>
 	:global(.custom-marker) {
 		background-image: url('https://docs.mapbox.com/help/demos/custom-markers-gl-js/mapbox-icon.png');
 		background-size: cover;
@@ -138,4 +133,4 @@
 		font-family: 'Open Sans', sans-serif;
 		padding: 10px;
 	}
-</style> -->
+</style>
