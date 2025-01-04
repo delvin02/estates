@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "scrape:domain": "bun run src/domain-scraper.ts"
+    "scrape:domain": "bun run src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -12,7 +12,10 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "@types/papaparse": "^5.3.15",
     "@types/puppeteer": "^7.0.4",
+    "chalk": "^5.4.1",
+    "papaparse": "^5.4.1",
     "puppeteer": "^23.11.1"
   }
 }
