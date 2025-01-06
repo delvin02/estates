@@ -17,10 +17,3 @@ export class ChalkLogger {
     console.log(chalk.yellow(`[WARNING]: ${message}`));
   }
 }
-
-// Example usage:
-const logger = new ChalkLogger();
-logger.info("This is an informational message");
-logger.success("Operation was successful!");
-logger.error("An error occurred!");
-logger.warning("This is a warning!");

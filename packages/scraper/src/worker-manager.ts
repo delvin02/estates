@@ -1,4 +1,4 @@
-import { POSTCODES } from "./postcodes";
+import { POSTCODE_AREAS } from "./postcode-areas";
 import type { IScraper, PropertyDetail } from "./@interfaces";
 import { promises as fs } from "fs";
 import { join, resolve } from "path";
@@ -16,7 +16,7 @@ export class WorkerManager {
     this.maxWorkers = maxWorkers;
     this.activeWorkers = 0;
     this.scraper = scraper;
-    this.queue = POSTCODES;
+    this.queue = this.getPostcodes();
   }
 
   public async run(): Promise<void> {
@@ -65,5 +65,11 @@ export class WorkerManager {
     } catch (error) {
       this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
     }
+  }
+
+  private getPostcodes(): string[] {
+    return Array.from(
+      new Set(POSTCODE_AREAS.map((area) => area.postcode).filter(Boolean))
+    );
   }
 }

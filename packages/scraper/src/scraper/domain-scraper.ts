@@ -7,7 +7,7 @@ import {
   SOLD_LISTING__PATH,
   SOLD_PRICE_TAG__ID,
   UNIT_STREET__ID,
-} from "../constants";
+} from "../../constants/domain";
 
 import type { IScraper, PropertyDetail } from "../@interfaces";
 import { ChalkLogger } from "../helper/chalk-logger";
