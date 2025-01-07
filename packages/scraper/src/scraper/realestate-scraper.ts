@@ -44,14 +44,11 @@ export class RealEstateScraper implements IScraper {
           break;
         }
 
-        console.log(PROPERTY_LISTING_RESULT__CLASS);
         try {
-          console.log("waiting");
           await page.waitForSelector("ul.tiered-results", {
             timeout: 10000,
             visible: true,
           });
-          console.log("OK!");
         } catch (e) {
           this.logger.error(
             `Timeout: No more listings for ${postcode} on page ${pageNumber}`
@@ -60,54 +57,101 @@ export class RealEstateScraper implements IScraper {
           console.log(e);
           break;
         }
-
+        console.log("evaluate now");
         const results = await page.evaluate(
-          (BASE_URL, PROPERTY_LINK__CLASS) => {
+          (postcode, BASE_URL, SOLD_PRICE_TAG__CLASS, PROPERTY_LINK__CLASS, PROPERTY_LISTING_CONTENT__CLASS, ADDRESS__CLASS) => {
             function buildFullUrl(path: string) {
               return `${BASE_URL}${path}`;
             }
 
+            function extractNumericValue(amount: string): string {
+              return amount.replace(/[$,]/g, '');
+            }
+
+            function extractIdFromHref(path: string): string {
+              const match = path.match(/(\d+)$/);
+              return match ? match[1] : '';
+            }
+
+            
+            function extractSoldDate(description: string): string {
+              const parts = description.split(" ");
+              const date = parts.slice(2).join(" ");
+              return date;
+            }
+
+            function extractUnitStreetAndCity(address: string): any {
+              const match = address.match(/^(\d+)\s([\w\s]+)\sStreet,\s([\w\s]+)$/);
+              if (!match) return {};
+
+              const unit = match[1];
+              const street = match[2].trim();
+              const city = match[3].trim();
+              return {unit, street, city};
+            }
+            console.log("ul now")
             const ul = document.querySelector("ul.tiered-results");
 
             if (!ul) {
               console.log("no ul");
               return [];
             }
+            console.log("ul checked")
 
             const records: PropertyDetail[] = [];
             const liElements = ul.querySelectorAll("li");
             liElements.forEach((li) => {
+              console.log(li);
               const hrefWrapper = li.querySelector(`a${PROPERTY_LINK__CLASS}`);
+              const divPriceWrapper = li.querySelector(`div${SOLD_PRICE_TAG__CLASS}`)
+              const divSoldDateWrapper = li.querySelector(`div .residential-card__content span`)
+              const h2AddressWrapper = li.querySelector(`h2.residential-card__address-heading span`);
 
-              if (!hrefWrapper) {
+              if (!hrefWrapper || !divPriceWrapper || !divSoldDateWrapper || !h2AddressWrapper) {
+                console.log("Wrapper not found");
                 return;
               }
 
-              const urlPath = hrefWrapper.getAttribute("href");
+              const pathIdentifier = hrefWrapper.getAttribute("href");
+              const soldDateDescription = divSoldDateWrapper.textContent;
+              console.log('s', soldDateDescription);
+              const address = h2AddressWrapper.textContent;
+              if (!divPriceWrapper.textContent || !pathIdentifier || !soldDateDescription || !address) {
+                return;
+              }
 
-              if (!urlPath) {
+              const price = extractNumericValue(divPriceWrapper.textContent);
+              const propertyId = extractIdFromHref(pathIdentifier);
+              const soldDate = extractSoldDate(soldDateDescription);
+              const {unit, street, city} = extractUnitStreetAndCity(address);
+
+              if ( !propertyId || !soldDate || !propertyId ) {
                 return;
               }
 
               const data: PropertyDetail = {
-                Url: buildFullUrl(urlPath),
-                PathIdentifier: "test",
-                PropertyId: "test",
-                Price: "test",
-                Unit: "test",
-                Street: "test",
-                City: "test",
-                State: "test",
-                Postcode: "test",
-                SoldDate: "test",
+                Url: buildFullUrl(pathIdentifier),
+                PathIdentifier: pathIdentifier,
+                PropertyId: propertyId,
+                Price: price,
+                Unit: unit,
+                Street: street,
+                City: city,
+                State: "SA",
+                Postcode: "5000",
+                SoldDate: soldDate,
               };
               records.push(data);
             });
 
             return records;
           },
+          postcode,
           BASE_URL,
-          PROPERTY_LINK__CLASS
+          SOLD_PRICE_TAG__CLASS,
+          PROPERTY_LINK__CLASS,
+          PROPERTY_LISTING_CONTENT__CLASS,
+          ADDRESS__CLASS
         );
 
         allResults = allResults.concat(results);
