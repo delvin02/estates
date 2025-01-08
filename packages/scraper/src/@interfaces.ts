@@ -1,5 +1,6 @@
 export interface IScraper {
-  scrape(postcode: string): Promise<PropertyDetail[]>;
+  readonly name: string;
+  scrape(postcode: string): Promise<void>;
 }
 
 export interface PostcodeArea {

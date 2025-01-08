@@ -1,14 +1,14 @@
-//  ======== DOMAINS ========
 export const BASE_URL: string = "www.realestate.com.au";
 export const SOLD_LISTING__PATH = "/sold";
 export const IN_POSTCODE__PATH = "/in-";
 export const LIST__PATH = "/list-";
 
 // LISTINGS
-export const PROPERTY_LISTING_RESULT__CLASS = ".tiered-results";
+export const PROPERTY_LISTING_RESULT__CLASS: string = ".tiered-results";
 
 // LISTING CONTENT
-export const PROPERTY_LISTING_CONTENT__CLASS = ".residential-card__content";
+export const PROPERTY_LISTING_CONTENT__CLASS: string =
+  ".residential-card__content-wrapper";
 
 // CARDS
 export const ADDRESS__CLASS: string = ".residential-card__address-heading";

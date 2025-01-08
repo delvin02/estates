@@ -1,22 +1,25 @@
 import {
-  PROPERTY_LISTING_CONTENT__CLASS,
-  PROPERTY_LISTING_RESULT__CLASS,
-  SOLD_PRICE_TAG__CLASS,
-  ADDRESS__CLASS,
-  PROPERTY_LINK__CLASS,
   BASE_URL,
   SOLD_LISTING__PATH,
+  PROPERTY_LISTING_RESULT__CLASS,
+  PROPERTY_LISTING_CONTENT__CLASS,
+  ADDRESS__CLASS,
+  SOLD_PRICE_TAG__CLASS,
+  PROPERTY_LINK__CLASS,
 } from "../../constants/realestate";
-
 import type { IScraper, PropertyDetail } from "../@interfaces";
 import { ChalkLogger } from "../helper/chalk-logger";
 import { getListLinkPath, getPostCodeLinkPath } from "../helper/realestate";
 import { connect } from "puppeteer-real-browser";
-import { load } from "cheerio";
+import { promises as fs } from "fs";
+import { join, resolve } from "path";
+import Papa from "papaparse";
 export class RealEstateScraper implements IScraper {
+  public name = "realestate";
   private readonly logger = new ChalkLogger();
+  private readonly batchSize = 1000;
 
-  async scrape(postcode: string): Promise<PropertyDetail[]> {
+  async scrape(postcode: string): Promise<void> {
     let allResults: PropertyDetail[] = [];
     const { page, browser } = await connect({
       headless: false,
@@ -34,7 +37,7 @@ export class RealEstateScraper implements IScraper {
         );
 
         const response = await page.goto(url, {
-          waitUntil: "networkidle0",
+          waitUntil: "domcontentloaded",
         });
 
         if (response && response.status() === 400) {
@@ -45,7 +48,7 @@ export class RealEstateScraper implements IScraper {
         }
 
         try {
-          await page.waitForSelector("ul.tiered-results", {
+          await page.waitForSelector(`ul${PROPERTY_LISTING_RESULT__CLASS}`, {
             timeout: 10000,
             visible: true,
           });
@@ -57,23 +60,30 @@ export class RealEstateScraper implements IScraper {
           console.log(e);
           break;
         }
-        console.log("evaluate now");
+
         const results = await page.evaluate(
-          (postcode, BASE_URL, SOLD_PRICE_TAG__CLASS, PROPERTY_LINK__CLASS, PROPERTY_LISTING_CONTENT__CLASS, ADDRESS__CLASS) => {
+          (
+            postcode,
+            PROPERTY_LISTING_RESULT__CLASS,
+            BASE_URL,
+            SOLD_PRICE_TAG__CLASS,
+            PROPERTY_LINK__CLASS,
+            PROPERTY_LISTING_CONTENT__CLASS,
+            ADDRESS__CLASS
+          ) => {
             function buildFullUrl(path: string) {
               return `${BASE_URL}${path}`;
             }
 
             function extractNumericValue(amount: string): string {
-              return amount.replace(/[$,]/g, '');
+              return amount.replace(/[$,]/g, "");
             }
 
             function extractIdFromHref(path: string): string {
               const match = path.match(/(\d+)$/);
-              return match ? match[1] : '';
+              return match ? match[1] : "";
             }
 
-            
             function extractSoldDate(description: string): string {
               const parts = description.split(" ");
               const date = parts.slice(2).join(" ");
@@ -81,51 +91,82 @@ export class RealEstateScraper implements IScraper {
             }
 
             function extractUnitStreetAndCity(address: string): any {
-              const match = address.match(/^(\d+)\s([\w\s]+)\sStreet,\s([\w\s]+)$/);
-              if (!match) return {};
+              const parts = address.split(",");
 
-              const unit = match[1];
-              const street = match[2].trim();
-              const city = match[3].trim();
-              return {unit, street, city};
+              if (parts.length < 2) {
+                return {};
+              }
+              const city = parts[parts.length - 1].trim();
+
+              const unitAndStreet = parts
+                .slice(0, parts.length - 1)
+                .join(",")
+                .trim();
+              const tokens = unitAndStreet.split(/\s+/);
+
+              if (tokens.length < 2) {
+                return {};
+              }
+
+              const unit = tokens[0];
+              const street = tokens.slice(1).join(" ");
+
+              return { unit, street, city };
             }
-            console.log("ul now")
-            const ul = document.querySelector("ul.tiered-results");
+
+            const ul = document.querySelector(
+              `ul${PROPERTY_LISTING_RESULT__CLASS}`
+            );
 
             if (!ul) {
               console.log("no ul");
               return [];
             }
-            console.log("ul checked")
 
             const records: PropertyDetail[] = [];
             const liElements = ul.querySelectorAll("li");
             liElements.forEach((li) => {
               console.log(li);
               const hrefWrapper = li.querySelector(`a${PROPERTY_LINK__CLASS}`);
-              const divPriceWrapper = li.querySelector(`div${SOLD_PRICE_TAG__CLASS}`)
-              const divSoldDateWrapper = li.querySelector(`div .residential-card__content span`)
-              const h2AddressWrapper = li.querySelector(`h2.residential-card__address-heading span`);
+              const divPriceWrapper = li.querySelector(
+                `div${SOLD_PRICE_TAG__CLASS}`
+              );
+              const soldDateWrapper = li.querySelector(
+                `div${PROPERTY_LISTING_CONTENT__CLASS} > div > span`
+              );
+              const h2AddressWrapper = li.querySelector(
+                `h2${ADDRESS__CLASS} span`
+              );
 
-              if (!hrefWrapper || !divPriceWrapper || !divSoldDateWrapper || !h2AddressWrapper) {
-                console.log("Wrapper not found");
+              if (
+                !hrefWrapper ||
+                !divPriceWrapper ||
+                !soldDateWrapper ||
+                !h2AddressWrapper ||
+                !h2AddressWrapper
+              ) {
                 return;
               }
 
               const pathIdentifier = hrefWrapper.getAttribute("href");
-              const soldDateDescription = divSoldDateWrapper.textContent;
-              console.log('s', soldDateDescription);
+              const soldDateDescription = soldDateWrapper.textContent;
               const address = h2AddressWrapper.textContent;
-              if (!divPriceWrapper.textContent || !pathIdentifier || !soldDateDescription || !address) {
+              const priceTag = divPriceWrapper.textContent;
+              if (
+                !pathIdentifier ||
+                !soldDateDescription ||
+                !priceTag ||
+                !address
+              ) {
                 return;
               }
 
-              const price = extractNumericValue(divPriceWrapper.textContent);
+              const price = extractNumericValue(priceTag);
               const propertyId = extractIdFromHref(pathIdentifier);
               const soldDate = extractSoldDate(soldDateDescription);
-              const {unit, street, city} = extractUnitStreetAndCity(address);
+              const { unit, street, city } = extractUnitStreetAndCity(address);
 
-              if ( !propertyId || !soldDate || !propertyId ) {
+              if (!propertyId || !price || !soldDate) {
                 return;
               }
 
@@ -138,7 +179,7 @@ export class RealEstateScraper implements IScraper {
                 Street: street,
                 City: city,
                 State: "SA",
-                Postcode: "5000",
+                Postcode: postcode,
                 SoldDate: soldDate,
               };
               records.push(data);
@@ -147,6 +188,7 @@ export class RealEstateScraper implements IScraper {
             return records;
           },
           postcode,
+          PROPERTY_LISTING_RESULT__CLASS,
           BASE_URL,
           SOLD_PRICE_TAG__CLASS,
           PROPERTY_LINK__CLASS,
@@ -155,8 +197,13 @@ export class RealEstateScraper implements IScraper {
         );
 
         allResults = allResults.concat(results);
+
+        if (allResults.length >= this.batchSize) {
+          await this.save(allResults, postcode);
+          allResults = [];
+        }
+
         pageNumber++;
-        break;
       }
       console.log(allResults);
     } catch (error) {
@@ -165,12 +212,17 @@ export class RealEstateScraper implements IScraper {
       if (browser) await browser.close();
       this.logger.info("Browser closed.");
     }
-
-    return allResults;
   }
-}
-
-if (import.meta.main) {
-  const realstate = new RealEstateScraper();
-  realstate.scrape("5000");
+  private async save(data: PropertyDetail[], postcode: string): Promise<void> {
+    try {
+      const outputDir = resolve(__dirname, `../results/${this.name}`);
+      await fs.mkdir(outputDir, { recursive: true });
+      const csv = Papa.unparse(data);
+      const csvPath = join(outputDir, `domain-${postcode}.csv`);
+      await fs.writeFile(csvPath, csv);
+      this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
+    } catch (error) {
+      this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
+    }
+  }
 }

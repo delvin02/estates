@@ -42,28 +42,10 @@ export class WorkerManager {
   private async process(postcode: string) {
     try {
       this.logger.info(`Worker started for postcode: ${postcode}`);
-      const data = await this.scraper.scrape(postcode);
-
-      if (data.length > 0) {
-        await this.save(data, postcode);
-      }
-
+      await this.scraper.scrape(postcode);
       this.logger.info(`Worker completed for postcode: ${postcode}`);
     } catch (error) {
       this.logger.error(`Error processing postcode ${postcode}: ${error}`);
-    }
-  }
-
-  private async save(data: PropertyDetail[], postcode: string): Promise<void> {
-    try {
-      const outputDir = resolve(__dirname, "../results/domain");
-      await fs.mkdir(outputDir, { recursive: true });
-      const csv = Papa.unparse(data);
-      const csvPath = join(outputDir, `domain-${postcode}.csv`);
-      await fs.writeFile(csvPath, csv);
-      this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
-    } catch (error) {
-      this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
     }
   }
 

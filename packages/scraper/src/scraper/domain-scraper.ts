@@ -8,15 +8,19 @@ import {
   SOLD_PRICE_TAG__ID,
   UNIT_STREET__ID,
 } from "../../constants/domain";
-
 import type { IScraper, PropertyDetail } from "../@interfaces";
 import { ChalkLogger } from "../helper/chalk-logger";
-
+import { promises as fs } from "fs";
+import { join, resolve } from "path";
+import Papa from "papaparse";
 export class DomainScraper implements IScraper {
+  public name = "domain";
   private readonly logger = new ChalkLogger();
+  private readonly batchSize = 1000;
 
-  async scrape(postcode: string): Promise<PropertyDetail[]> {
+  async scrape(postcode: string): Promise<void> {
     let allResults: PropertyDetail[] = [];
+    let batchNumber: number = 1;
     let browser;
     try {
       browser = await puppeteer.launch({
@@ -183,7 +187,18 @@ export class DomainScraper implements IScraper {
         );
 
         allResults = allResults.concat(results);
+
+        if (allResults.length >= this.batchSize) {
+          await this.save(allResults, postcode, batchNumber);
+          allResults = [];
+          batchNumber++;
+        }
+
         pageNumber++;
+      }
+
+      if (allResults.length > 0) {
+        await this.save(allResults, postcode, batchNumber);
       }
     } catch (error) {
       this.logger.error(`Error while scraping postcode ${postcode}: ${error}`);
@@ -191,7 +206,25 @@ export class DomainScraper implements IScraper {
       if (browser) await browser.close();
       this.logger.info("Browser closed.");
     }
+  }
 
-    return allResults;
+  private async save(
+    data: PropertyDetail[],
+    postcode: string,
+    batchNumber: number
+  ): Promise<void> {
+    try {
+      const outputDir = resolve(__dirname, `../results/${this.name}`);
+      await fs.mkdir(outputDir, { recursive: true });
+      const csv = Papa.unparse(data);
+      const csvPath = join(
+        outputDir,
+        `domain-${postcode}-batch-${batchNumber}.csv`
+      );
+      await fs.writeFile(csvPath, csv);
+      this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
+    } catch (error) {
+      this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
+    }
   }
 }
