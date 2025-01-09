@@ -2,10 +2,10 @@
 
 import fs from "fs";
 import path from "path";
-import type { ProxyInfo } from "../@interfaces";
+import type { ProxyOptions } from "puppeteer-real-browser";
 
 export class RotationalProxy {
-  private proxies: ProxyInfo[] = [];
+  private proxies: ProxyOptions[] = [];
   private currentIndex = 0;
 
   constructor() {
@@ -41,7 +41,7 @@ export class RotationalProxy {
         }
 
         // Build the ProxyInfo object
-        const proxyInfo: ProxyInfo = {
+        const proxyInfo: ProxyOptions = {
           host,
           port: portAsNumber,
           username,
@@ -62,7 +62,7 @@ export class RotationalProxy {
   /**
    * Return the next proxy in rotation
    */
-  public getNextProxy(): ProxyInfo {
+  public getNextProxy(): ProxyOptions {
     if (this.proxies.length === 0) {
       throw new Error(
         "No proxies available. Make sure proxies.txt is populated."
