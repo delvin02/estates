@@ -21,6 +21,8 @@ export class RealEstateScraper implements IScraper {
 
   async scrape(postcode: string): Promise<void> {
     let allResults: PropertyDetail[] = [];
+    let batchNumber: number = 1;
+
     const { page, browser } = await connect({
       headless: false,
       args: ["--start-maximized", "--window-size=1920,1080", "--no-sandbox"],
@@ -50,7 +52,6 @@ export class RealEstateScraper implements IScraper {
         try {
           await page.waitForSelector(`ul${PROPERTY_LISTING_RESULT__CLASS}`, {
             timeout: 10000,
-            visible: true,
           });
         } catch (e) {
           this.logger.error(
@@ -199,12 +200,18 @@ export class RealEstateScraper implements IScraper {
         allResults = allResults.concat(results);
 
         if (allResults.length >= this.batchSize) {
-          await this.save(allResults, postcode);
+          await this.save(allResults, postcode, batchNumber);
           allResults = [];
+          batchNumber++;
         }
 
         pageNumber++;
       }
+      
+      if (allResults.length > 0) {
+        await this.save(allResults, postcode, batchNumber);
+      }
+
       console.log(allResults);
     } catch (error) {
       this.logger.error(`Error while scraping postcode ${postcode}: ${error}`);
@@ -213,12 +220,16 @@ export class RealEstateScraper implements IScraper {
       this.logger.info("Browser closed.");
     }
   }
-  private async save(data: PropertyDetail[], postcode: string): Promise<void> {
+  private async save(
+    data: PropertyDetail[],
+    postcode: string,
+    batchNumber: number
+  ): Promise<void> {    
     try {
       const outputDir = resolve(__dirname, `../results/${this.name}`);
       await fs.mkdir(outputDir, { recursive: true });
       const csv = Papa.unparse(data);
-      const csvPath = join(outputDir, `domain-${postcode}.csv`);
+      const csvPath = join(outputDir, `realestate-${postcode}-batch-${batchNumber}.csv`);
       await fs.writeFile(csvPath, csv);
       this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
     } catch (error) {
