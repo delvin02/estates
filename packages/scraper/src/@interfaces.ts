@@ -23,3 +23,10 @@ export interface PropertyDetail {
 
   SoldDate: string;
 }
+
+export interface ProxyInfo {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+}

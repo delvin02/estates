@@ -30,6 +30,14 @@ export class DomainScraper implements IScraper {
 
       const page = await browser.newPage();
 
+      await page.setRequestInterception(true);
+      page.on("request", (request) => {
+        if (request.isInterceptResolutionHandled()) return;
+        if (request.url().endsWith(".png") || request.url().endsWith(".jpg"))
+          request.abort();
+        else request.continue();
+      });
+
       let pageNumber: number = 1;
 
       this.logger.info(`Starting to scrape postcode: ${postcode}`);
@@ -214,13 +222,20 @@ export class DomainScraper implements IScraper {
     batchNumber: number
   ): Promise<void> {
     try {
-      const outputDir = resolve(__dirname, `../results/${this.name}`);
+      const outputDir = resolve(__dirname, `../../results/${this.name}`);
       await fs.mkdir(outputDir, { recursive: true });
+
+      if (data.length === 0) {
+        this.logger.warning(`No data to save for postcode ${postcode}`);
+        return;
+      }
+
       const csv = Papa.unparse(data);
       const csvPath = join(
         outputDir,
         `domain-${postcode}-batch-${batchNumber}.csv`
       );
+
       await fs.writeFile(csvPath, csv);
       this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
     } catch (error) {

@@ -14,21 +14,55 @@ import { connect } from "puppeteer-real-browser";
 import { promises as fs } from "fs";
 import { join, resolve } from "path";
 import Papa from "papaparse";
+import { RotationalProxy } from "../proxy/proxy";
+
 export class RealEstateScraper implements IScraper {
   public name = "realestate";
   private readonly logger = new ChalkLogger();
   private readonly batchSize = 1000;
+  private rotationalProxy: RotationalProxy;
+
+  constructor() {
+    this.rotationalProxy = new RotationalProxy();
+  }
 
   async scrape(postcode: string): Promise<void> {
     let allResults: PropertyDetail[] = [];
     let batchNumber: number = 1;
 
+    const proxyInfo = this.rotationalProxy.getNextProxy();
+    const proxyServerArg = `--proxy-server=http://${proxyInfo.host}:${proxyInfo.port}`;
+
+    // might need to rotate proxies
     const { page, browser } = await connect({
       headless: false,
-      args: ["--start-maximized", "--window-size=1920,1080", "--no-sandbox"],
+      args: [
+        "--start-maximized",
+        "--window-size=1920,1080",
+        "--no-sandbox",
+        // proxyServerArg,
+      ],
     });
 
+    // await page.setRequestInterception(true);
+    // page.on("request", (request) => {
+    //   if (
+    //     ["image", "stylesheet", "font", "media"].includes(
+    //       request.resourceType()
+    //     )
+    //   ) {
+    //     request.abort();
+    //   } else {
+    //     request.continue();
+    //   }
+    // });
+
     try {
+      // await page.authenticate({
+      //   username: proxyInfo.username,
+      //   password: proxyInfo.password,
+      // });
+
       let pageNumber: number = 1;
 
       this.logger.info(`Starting to scrape postcode: ${postcode}`);
@@ -50,7 +84,7 @@ export class RealEstateScraper implements IScraper {
         }
 
         try {
-          await page.waitForSelector(`ul${PROPERTY_LISTING_RESULT__CLASS}`, {
+          await page.waitForSelector(`ul.tiered-results`, {
             timeout: 10000,
           });
         } catch (e) {
@@ -72,6 +106,7 @@ export class RealEstateScraper implements IScraper {
             PROPERTY_LISTING_CONTENT__CLASS,
             ADDRESS__CLASS
           ) => {
+            console.log(PROPERTY_LISTING_RESULT__CLASS);
             function buildFullUrl(path: string) {
               return `${BASE_URL}${path}`;
             }
@@ -207,7 +242,7 @@ export class RealEstateScraper implements IScraper {
 
         pageNumber++;
       }
-      
+
       if (allResults.length > 0) {
         await this.save(allResults, postcode, batchNumber);
       }
@@ -216,7 +251,7 @@ export class RealEstateScraper implements IScraper {
     } catch (error) {
       this.logger.error(`Error while scraping postcode ${postcode}: ${error}`);
     } finally {
-      if (browser) await browser.close();
+      // if (browser) await browser.close();
       this.logger.info("Browser closed.");
     }
   }
@@ -224,16 +259,24 @@ export class RealEstateScraper implements IScraper {
     data: PropertyDetail[],
     postcode: string,
     batchNumber: number
-  ): Promise<void> {    
+  ): Promise<void> {
     try {
-      const outputDir = resolve(__dirname, `../results/${this.name}`);
+      const outputDir = resolve(__dirname, `../../results/${this.name}`);
       await fs.mkdir(outputDir, { recursive: true });
       const csv = Papa.unparse(data);
-      const csvPath = join(outputDir, `realestate-${postcode}-batch-${batchNumber}.csv`);
+      const csvPath = join(
+        outputDir,
+        `realestate-${postcode}-batch-${batchNumber}.csv`
+      );
       await fs.writeFile(csvPath, csv);
-      this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
+      this.logger.success(`Data for postcode ${postcode} saved to: ${csvPath}`);
     } catch (error) {
       this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
     }
   }
+}
+
+if (import.meta.main) {
+  const scraper = new RealEstateScraper();
+  scraper.scrape("5000");
 }
