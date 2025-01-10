@@ -32,13 +32,21 @@ export class RealEstateScraper implements IScraper {
 
     const proxyInfo = this.rotationalProxy.getNextProxy();
 
+    let { page, browser } = await connect({
+      headless: true,
+      args: [
+        "--start-maximized",
+        "--window-size=1920,1080",
+        "--disable-setuid-sandbox",
+      ],
+      // proxy: proxyInfo,
+    });
+
     // might need to rotate proxies
 
-
     // await page.goto("https://google.com")
-    
-    // await page.realCursor.moveTo({ x: Math.random() * 800, y: Math.random() * 600 });
 
+    // await page.realCursor.moveTo({ x: Math.random() * 800, y: Math.random() * 600 });
 
     // await page.setRequestInterception(true);
     // page.on("request", (request) => {
@@ -56,49 +64,49 @@ export class RealEstateScraper implements IScraper {
     let pageNumber: number = 1;
 
     this.logger.info(`Starting to scrape postcode: ${postcode}`);
-    while (true) {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 5000;
+    let retryFinished = false;
 
-      let { page, browser } = await connect({
-        headless: true,
-        args: [
-          "--start-maximized",
-          "--window-size=1920,1080",
-          "--disable-setuid-sandbox",
-          "--disable-gpu",
+    try {
+      while (true && !retryFinished) {
+        let success = false;
 
-        ],
-        // proxy:proxyInfo
-      });
-      try {
+        for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
+          try {
+            const url = `https://${BASE_URL}${SOLD_LISTING__PATH}${getPostCodeLinkPath(postcode)}${getListLinkPath(pageNumber)}`;
+            this.logger.info(
+              `Scraping Page ${pageNumber} for Postcode: ${postcode}`
+            );
 
-        const url = `https://${BASE_URL}${SOLD_LISTING__PATH}${getPostCodeLinkPath(postcode)}${getListLinkPath(pageNumber)}`;
-        this.logger.info(
-          `Scraping Page ${pageNumber} for Postcode: ${postcode}`
-        );
+            const response = await page.goto(url, {
+              waitUntil: "networkidle2",
+            });
 
-        const response = await page.goto(url, { waitUntil: 'networkidle2' });
+            if (response && response.status() === 400) {
+              this.logger.info(
+                `No more listings for ${postcode} on page ${pageNumber}`
+              );
+              break; // Exit the loop as there are no more listings
+            }
 
-          await page.screenshot({path: `${pageNumber}.png`});
+            await page.waitForSelector(`ul.tiered-results`, { timeout: 10000 });
+            break;
+          } catch (error) {
+            this.logger.error(
+              `Attempt ${retryCount + 1} failed for postcode: ${postcode} on page ${pageNumber}`
+            );
 
-        if (response && response.status() === 400) {
-          this.logger.info(
-            `No more listings for ${postcode} on page ${pageNumber}`
-          );
-          break;
-        }
-        debugger;
-
-        try {
-          await page.waitForSelector(`ul.tiered-results`, {
-            timeout: 10000,
-          });
-        } catch (e) {
-          this.logger.error(
-            `Timeout: No more listings for ${postcode} on page ${pageNumber}`
-          );
-
-          console.log(e);
-          break;
+            if (retryCount < MAX_RETRIES - 1) {
+              this.logger.info(`Retrying in ${RETRY_DELAY / 1000} seconds...`);
+              await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+            } else {
+              this.logger.error(
+                `Max retries reached. Skipping postcode: ${postcode} on page ${pageNumber}`
+              );
+              retryFinished = true;
+            }
+          }
         }
 
         const results = await page.evaluate(
@@ -183,7 +191,6 @@ export class RealEstateScraper implements IScraper {
                 !hrefWrapper ||
                 !divPriceWrapper ||
                 !soldDateWrapper ||
-                !h2AddressWrapper ||
                 !h2AddressWrapper
               ) {
                 return;
@@ -246,18 +253,17 @@ export class RealEstateScraper implements IScraper {
         }
 
         pageNumber++;
-      } finally {
-        if (browser) {
-          await page.close();
-          await browser.close();
-        }
+
+        // sleep to make it less obvious
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    } catch (e) {
+      this.logger.error(`Unhandled error: ${e}`);
+    } finally {
+      if (allResults.length > 0) {
+        await this.save(allResults, postcode, batchNumber);
       }
     }
-
-    if (allResults.length > 0) {
-      await this.save(allResults, postcode, batchNumber);
-    }
-
   }
   private async save(
     data: PropertyDetail[],
@@ -280,7 +286,7 @@ export class RealEstateScraper implements IScraper {
   }
 }
 
-if (import.meta.main) {
-  const scraper = new RealEstateScraper();
-  scraper.scrape("5000");
-}
+// if (import.meta.main) {
+//   const scraper = new RealEstateScraper();
+//   scraper.scrape("5031");
+// }

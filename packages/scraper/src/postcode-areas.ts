@@ -3,42 +3,42 @@
 import type { PostcodeArea } from "./@interfaces";
 
 export const POSTCODE_AREAS: PostcodeArea[] = [
-  { postcode: "5000", suburbs: ["Adelaide City"] },
-  // Skipping "5001" due to server issue
-  { postcode: "5006", suburbs: ["North Adelaide"] },
-  {
-    postcode: "5007",
-    suburbs: ["Bowden", "Brompton", "Hindmarsh", "Welland", "West Hindmarsh"],
-  },
-  {
-    postcode: "5008",
-    suburbs: [
-      "Croydon",
-      "Devon Park",
-      "Renown Park",
-      "Ridleyton",
-      "West Croydon",
-    ],
-  },
-  { postcode: "5009", suburbs: ["Allenby Gardens", "Beverley", "Kilkenny"] },
-  {
-    postcode: "5011",
-    suburbs: [
-      "Woodville",
-      "Woodville Park",
-      "Woodville South",
-      "Woodville West",
-    ],
-  },
-  { postcode: "5012", suburbs: ["Athol Park", "Woodville North"] },
-  { postcode: "5013", suburbs: ["Pennington", "Rosewater", "Rosewater East"] },
-  {
-    postcode: "5014",
-    suburbs: ["Albert Park", "Cheltenham", "Hendon", "Royal Park"],
-  },
-  { postcode: "5019", suburbs: ["Semaphore Park"] },
-  { postcode: "5020", suburbs: ["West Lakes Shore"] },
-  { postcode: "5021", suburbs: ["West Lakes"] },
+  // { postcode: "5000", suburbs: ["Adelaide City"] },
+  // // Skipping "5001" due to server issue
+  // { postcode: "5006", suburbs: ["North Adelaide"] },
+  // {
+  //   postcode: "5007",
+  //   suburbs: ["Bowden", "Brompton", "Hindmarsh", "Welland", "West Hindmarsh"],
+  // },
+  // {
+  //   postcode: "5008",
+  //   suburbs: [
+  //     "Croydon",
+  //     "Devon Park",
+  //     "Renown Park",
+  //     "Ridleyton",
+  //     "West Croydon",
+  //   ],
+  // },
+  // { postcode: "5009", suburbs: ["Allenby Gardens", "Beverley", "Kilkenny"] },
+  // {
+  //   postcode: "5011",
+  //   suburbs: [
+  //     "Woodville",
+  //     "Woodville Park",
+  //     "Woodville South",
+  //     "Woodville West",
+  //   ],
+  // },
+  // { postcode: "5012", suburbs: ["Athol Park", "Woodville North"] },
+  // { postcode: "5013", suburbs: ["Pennington", "Rosewater", "Rosewater East"] },
+  // {
+  //   postcode: "5014",
+  //   suburbs: ["Albert Park", "Cheltenham", "Hendon", "Royal Park"],
+  // },
+  // { postcode: "5019", suburbs: ["Semaphore Park"] },
+  // { postcode: "5020", suburbs: ["West Lakes Shore"] },
+  // { postcode: "5021", suburbs: ["West Lakes"] },
   {
     postcode: "5022",
     suburbs: ["Grange", "Henley Beach", "Henley Beach South", "Tennyson"],
@@ -46,10 +46,10 @@ export const POSTCODE_AREAS: PostcodeArea[] = [
   { postcode: "5023", suburbs: ["Findon", "Seaton"] },
   { postcode: "5024", suburbs: ["Fulham", "Fulham Gardens", "West Beach"] },
   { postcode: "5025", suburbs: ["Flinders Park", "Kidman Park"] },
-  {
-    postcode: "5031",
-    suburbs: ["Mile End", "Mile End South", "Thebarton", "Torrensville"],
-  },
+  // {
+  //   postcode: "5031",
+  //   suburbs: ["Mile End", "Mile End South", "Thebarton", "Torrensville"],
+  // },
   { postcode: "5032", suburbs: ["Brooklyn Park", "Lockleys", "Underdale"] },
   {
     postcode: "5033",
