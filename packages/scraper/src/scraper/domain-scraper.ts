@@ -169,6 +169,9 @@ export class DomainScraper implements IScraper {
                 cleanInnerHtml(divSoldDateWrapper.innerHTML)
               );
 
+              if (!soldDate || !postcode) {
+                return;
+              }
               if (url) {
                 const data: PropertyDetail = {
                   Url: url,

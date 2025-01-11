@@ -3,39 +3,43 @@
 import type { PostcodeArea } from "./@interfaces";
 
 export const POSTCODE_AREAS: PostcodeArea[] = [
-  { postcode: "5000", suburbs: ["Adelaide City"] },
+  // { postcode: "5000", suburbs: ["Adelaide City"] },
   // Skipping "5001" due to server issue
-  { postcode: "5006", suburbs: ["North Adelaide"] },
+  // { postcode: "5006", suburbs: ["North Adelaide"] },
+  // {
+  //   postcode: "5007",
+  //   suburbs: ["Bowden", "Brompton", "Hindmarsh", "Welland", "West Hindmarsh"],
+  // },
+  // {
+  //   postcode: "5008",
+  //   suburbs: [
+  //     "Croydon",
+  //     "Devon Park",
+  //     "Renown Park",
+  //     "Ridleyton",
+  //     "West Croydon",
+  //   ],
+  // },
+  // { postcode: "5009", suburbs: ["Allenby Gardens", "Beverley", "Kilkenny"] },
+  // {
+  //   postcode: "5011",
+  //   suburbs: [
+  //     "Woodville",
+  //     "Woodville Park",
+  //     "Woodville South",
+  //     "Woodville West",
+  //   ],
+  // },
   {
-    postcode: "5007",
-    suburbs: ["Bowden", "Brompton", "Hindmarsh", "Welland", "West Hindmarsh"],
-  },
-  {
-    postcode: "5008",
-    suburbs: [
-      "Croydon",
-      "Devon Park",
-      "Renown Park",
-      "Ridleyton",
-      "West Croydon",
-    ],
-  },
-  { postcode: "5009", suburbs: ["Allenby Gardens", "Beverley", "Kilkenny"] },
-  {
-    postcode: "5011",
-    suburbs: [
-      "Woodville",
-      "Woodville Park",
-      "Woodville South",
-      "Woodville West",
-    ],
+    postcode: "5010",
+    suburbs: ["Angle Park", "Ferryden Park", "Regency Park"],
   },
   { postcode: "5012", suburbs: ["Athol Park", "Woodville North"] },
-  { postcode: "5013", suburbs: ["Pennington", "Rosewater", "Rosewater East"] },
-  {
-    postcode: "5014",
-    suburbs: ["Albert Park", "Cheltenham", "Hendon", "Royal Park"],
-  },
+  // { postcode: "5013", suburbs: ["Pennington", "Rosewater", "Rosewater East"] },
+  // {
+  //   postcode: "5014",
+  //   suburbs: ["Albert Park", "Cheltenham", "Hendon", "Royal Park"],
+  // },
   // { postcode: "5019", suburbs: ["Semaphore Park"] },
   // { postcode: "5020", suburbs: ["West Lakes Shore"] },
   // { postcode: "5021", suburbs: ["West Lakes"] },

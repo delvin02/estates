@@ -30,12 +30,13 @@ export class WorkerManager {
           // free the worker for next process
           this.activeWorkers--;
           this.run();
+
+          if (this.activeWorkers === 0 && this.queue.length === 0) {
+            this.logger.info("All scraping tasks completed!");
+            process.exit(0);
+          }
         });
       }
-    }
-
-    if (this.activeWorkers === 0 && this.queue.length === 0) {
-      this.logger.info("All scraping tasks completed!");
     }
   }
 

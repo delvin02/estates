@@ -15,12 +15,14 @@ import { promises as fs } from "fs";
 import { join, resolve } from "path";
 import Papa from "papaparse";
 import { RotationalProxy } from "../proxy/proxy";
+import { Mutex } from "async-mutex";
 
 export class RealEstateScraper implements IScraper {
   public name = "realestate";
   private readonly logger = new ChalkLogger();
   private readonly batchSize = 1000;
   private rotationalProxy: RotationalProxy;
+  private saveMutex = new Mutex();
 
   constructor() {
     this.rotationalProxy = new RotationalProxy();
@@ -43,7 +45,6 @@ export class RealEstateScraper implements IScraper {
     });
 
     // might need to rotate proxies
-
 
     // await page.realCursor.moveTo({ x: Math.random() * 800, y: Math.random() * 600 });
 
@@ -110,7 +111,11 @@ export class RealEstateScraper implements IScraper {
           }
         }
 
-          const { results, shouldStop } = await page.evaluate(
+        if (retryFinished) {
+          break;
+        }
+
+        const { results, shouldStop } = await page.evaluate(
           (
             postcode,
             PROPERTY_LISTING_RESULT__CLASS,
@@ -164,11 +169,13 @@ export class RealEstateScraper implements IScraper {
               return { unit, street, city };
             }
 
-            function getYearFromSoldDate(soldDateDescription: string): number | null {
-                // assuming the the soldDateDescription would always be in this format
-                // 12 Jan 2024
-                const date = new Date(Date.parse(soldDateDescription));
-                return date.getFullYear();
+            function getYearFromSoldDate(
+              soldDateDescription: string
+            ): number | null {
+              // assuming the the soldDateDescription would always be in this format
+              // 12 Jan 2024
+              const date = new Date(Date.parse(soldDateDescription));
+              return date.getFullYear();
             }
 
             const ul = document.querySelector(
@@ -224,7 +231,7 @@ export class RealEstateScraper implements IScraper {
 
               const soldYear = getYearFromSoldDate(soldDate);
               if (soldYear && soldYear < 2022) {
-                console.log("year is lesser than 2022, stop scraping.")
+                console.log("year is lesser than 2022, stop scraping.");
                 shouldStop = true;
               }
 
@@ -247,7 +254,7 @@ export class RealEstateScraper implements IScraper {
               records.push(data);
             });
 
-            return {results: records, shouldStop };
+            return { results: records, shouldStop };
           },
           postcode,
           PROPERTY_LISTING_RESULT__CLASS,
@@ -259,9 +266,11 @@ export class RealEstateScraper implements IScraper {
         );
 
         allResults = allResults.concat(results);
-        
+
         if (shouldStop) {
-          this.logger.info(`Stopping scraping as soldDate is before the year 2022.`);
+          this.logger.info(
+            `Stopping scraping as soldDate is before the year 2022.`
+          );
           stopScraping = true;
           break;
         }
@@ -283,7 +292,7 @@ export class RealEstateScraper implements IScraper {
       if (allResults.length > 0) {
         await this.save(allResults, postcode, batchNumber);
       }
-      if(browser) browser.close();
+      if (browser) browser.close();
     }
   }
   private async save(
@@ -291,23 +300,29 @@ export class RealEstateScraper implements IScraper {
     postcode: string,
     batchNumber: number
   ): Promise<void> {
-    try {
-      const outputDir = resolve(__dirname, `../../results/${this.name}`);
-      await fs.mkdir(outputDir, { recursive: true });
-      const csv = Papa.unparse(data);
-      const csvPath = join(
-        outputDir,
-        `realestate-${postcode}-batch-${batchNumber}.csv`
-      );
-      await fs.writeFile(csvPath, csv);
-      this.logger.success(`Data for postcode ${postcode} saved to: ${csvPath}`);
-    } catch (error) {
-      this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
-    }
+    await this.saveMutex.runExclusive(async () => {
+      try {
+        const outputDir = resolve(__dirname, `../../results/${this.name}`);
+        await fs.mkdir(outputDir, { recursive: true });
+        const csv = Papa.unparse(data);
+        const csvPath = join(
+          outputDir,
+          `realestate-${postcode}-batch-${batchNumber}.csv`
+        );
+        await fs.writeFile(csvPath, csv);
+        this.logger.success(
+          `Data for postcode ${postcode} saved to: ${csvPath}`
+        );
+      } catch (error) {
+        this.logger.error(
+          `Error saving data for postcode ${postcode}: ${error}`
+        );
+      }
+    });
   }
 }
 
 // if (import.meta.main) {
 //   const scraper = new RealEstateScraper();
-//   scraper.scrape("5031");
+//   scraper.scrape("5033");
 // }

@@ -1,59 +1,59 @@
 <script lang="ts">
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
-	import welcomeFallback from '$lib/images/svelte-welcome.png';
+	import { Slider } from '$lib/components/ui/slider';
+	import { Label } from "$lib/components/ui/label";
+	import * as Tooltip from "$lib/components/ui/tooltip";
+	import { Button } from "$lib/components/ui/button";
+
+	let salaryRange = [0];
+	let expenseRange = [0];
 </script>
 
 <svelte:head>
-	<title>Home</title>
+	<title>Calculator</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
 <section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcomeFallback} alt="Welcome" />
-			</picture>
-		</span>
+	<div class="w-full space-y-4 mx-auto">
+		<div class="space-y-2">
+		  <Label for="slider-example">How much do you earn?</Label>
+		  <Slider
+			id="slider-example"
+			bind:value={salaryRange}
+			max={500000}
+			step={100}
+		  />
+		</div>
+		<div class="text-center">
+		  <p class="text-sm text-muted-foreground">
+			Current value: {salaryRange[0]}
+		  </p>
+		</div>
+	  </div>
+	  <div class="w-full space-y-4 mx-auto">
+		<div class="space-y-2">
+		  <Label for="slider-example">What's your annual expenses?</Label>
 
-		to your new<br />SvelteKit app
-	</h1>
+			<Tooltip.Root openDelay={0}>
+				<Tooltip.Trigger asChild let:builder>
+			  <Button builders={[builder]} variant="outline">?</Button>
+			</Tooltip.Trigger>
+			<Tooltip.Content side="right" class="max-w-xs">
+			  <p>According to <a href="https://www.muval.com.au/blog/cost-of-living-in-adelaide" class="underline">Muval</a>, living in Adelaide for single costs approximately $1,890.40 and $6,574.00.</p>
+			</Tooltip.Content>
+		  </Tooltip.Root>
 
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<Counter />
+		  <Slider
+			id="slider-example"
+			bind:value={expenseRange}
+			max={50000}
+			step={100}
+		  />
+		</div>
+		<div class="text-center">
+		  <p class="text-sm text-muted-foreground">
+			Current value: {expenseRange[0]}
+		  </p>
+		</div>
+	  </div>
 </section>
-
-<style>
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 0.6;
-	}
-
-	h1 {
-		width: 100%;
-	}
-
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
-
-	.welcome img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		display: block;
-	}
-</style>
