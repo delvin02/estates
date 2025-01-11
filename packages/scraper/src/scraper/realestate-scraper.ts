@@ -33,7 +33,7 @@ export class RealEstateScraper implements IScraper {
     const proxyInfo = this.rotationalProxy.getNextProxy();
 
     let { page, browser } = await connect({
-      headless: true,
+      headless: false,
       args: [
         "--start-maximized",
         "--window-size=1920,1080",
@@ -44,7 +44,6 @@ export class RealEstateScraper implements IScraper {
 
     // might need to rotate proxies
 
-    // await page.goto("https://google.com")
 
     // await page.realCursor.moveTo({ x: Math.random() * 800, y: Math.random() * 600 });
 
@@ -67,9 +66,10 @@ export class RealEstateScraper implements IScraper {
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 5000;
     let retryFinished = false;
+    let stopScraping = false;
 
     try {
-      while (true && !retryFinished) {
+      while (!stopScraping && !retryFinished) {
         let success = false;
 
         for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
@@ -87,6 +87,7 @@ export class RealEstateScraper implements IScraper {
               this.logger.info(
                 `No more listings for ${postcode} on page ${pageNumber}`
               );
+              stopScraping = true;
               break; // Exit the loop as there are no more listings
             }
 
@@ -109,7 +110,7 @@ export class RealEstateScraper implements IScraper {
           }
         }
 
-        const results = await page.evaluate(
+          const { results, shouldStop } = await page.evaluate(
           (
             postcode,
             PROPERTY_LISTING_RESULT__CLASS,
@@ -119,7 +120,7 @@ export class RealEstateScraper implements IScraper {
             PROPERTY_LISTING_CONTENT__CLASS,
             ADDRESS__CLASS
           ) => {
-            console.log(PROPERTY_LISTING_RESULT__CLASS);
+            let shouldStop = false;
             function buildFullUrl(path: string) {
               return `${BASE_URL}${path}`;
             }
@@ -163,13 +164,20 @@ export class RealEstateScraper implements IScraper {
               return { unit, street, city };
             }
 
+            function getYearFromSoldDate(soldDateDescription: string): number | null {
+                // assuming the the soldDateDescription would always be in this format
+                // 12 Jan 2024
+                const date = new Date(Date.parse(soldDateDescription));
+                return date.getFullYear();
+            }
+
             const ul = document.querySelector(
               `ul${PROPERTY_LISTING_RESULT__CLASS}`
             );
 
             if (!ul) {
               console.log("no ul");
-              return [];
+              return { results: [], shouldStop: false };
             }
 
             const records: PropertyDetail[] = [];
@@ -214,6 +222,12 @@ export class RealEstateScraper implements IScraper {
               const soldDate = extractSoldDate(soldDateDescription);
               const { unit, street, city } = extractUnitStreetAndCity(address);
 
+              const soldYear = getYearFromSoldDate(soldDate);
+              if (soldYear && soldYear < 2022) {
+                console.log("year is lesser than 2022, stop scraping.")
+                shouldStop = true;
+              }
+
               if (!propertyId || !price || !soldDate) {
                 return;
               }
@@ -233,7 +247,7 @@ export class RealEstateScraper implements IScraper {
               records.push(data);
             });
 
-            return records;
+            return {results: records, shouldStop };
           },
           postcode,
           PROPERTY_LISTING_RESULT__CLASS,
@@ -245,6 +259,12 @@ export class RealEstateScraper implements IScraper {
         );
 
         allResults = allResults.concat(results);
+        
+        if (shouldStop) {
+          this.logger.info(`Stopping scraping as soldDate is before the year 2022.`);
+          stopScraping = true;
+          break;
+        }
 
         if (allResults.length >= this.batchSize) {
           await this.save(allResults, postcode, batchNumber);
@@ -263,6 +283,7 @@ export class RealEstateScraper implements IScraper {
       if (allResults.length > 0) {
         await this.save(allResults, postcode, batchNumber);
       }
+      if(browser) browser.close();
     }
   }
   private async save(
