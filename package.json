@@ -1,5 +1,5 @@
 {
-  "name": "estates-monorepo",
+  "name": "estates",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {

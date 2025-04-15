@@ -36,11 +36,7 @@ export class RealEstateScraper implements IScraper {
 
     let { page, browser } = await connect({
       headless: false,
-      args: [
-        "--start-maximized",
-        "--window-size=1920,1080",
-        "--disable-setuid-sandbox",
-      ],
+      args: ["--disable-setuid-sandbox"],
       // proxy: proxyInfo,
     });
 
@@ -71,7 +67,7 @@ export class RealEstateScraper implements IScraper {
 
     try {
       while (!stopScraping && !retryFinished) {
-        let success = false;
+        // let success = false;
 
         for (let retryCount = 0; retryCount < MAX_RETRIES; retryCount++) {
           try {
@@ -202,6 +198,10 @@ export class RealEstateScraper implements IScraper {
                 `h2${ADDRESS__CLASS} span`
               );
 
+              const ulPropertyDetailWrapper = li.querySelector(
+                `ul .residential-card__primary`
+              );
+              console.log(ulPropertyDetailWrapper);
               if (
                 !hrefWrapper ||
                 !divPriceWrapper ||
@@ -215,6 +215,33 @@ export class RealEstateScraper implements IScraper {
               const soldDateDescription = soldDateWrapper.textContent;
               const address = h2AddressWrapper.textContent;
               const priceTag = divPriceWrapper.textContent;
+              const featureElements = ulPropertyDetailWrapper
+                ?.querySelectorAll("div")[0]
+                ?.querySelectorAll("li");
+
+              let property: { bed?: number; bath?: number; parking?: number } =
+                { bed: 0, bath: 0, parking: 0 };
+              featureElements?.forEach((element) => {
+                const label =
+                  (element as HTMLElement)
+                    .getAttribute("aria-label")
+                    ?.toLowerCase() || "";
+                const amount =
+                  (element.querySelector("p") as HTMLElement)?.textContent ||
+                  "−";
+
+                if (label.includes("bed")) {
+                  property.bed = amount === "−" ? 0 : parseInt(amount, 10);
+                } else if (label.includes("bath")) {
+                  property.bath = amount === "−" ? 0 : parseInt(amount, 10);
+                } else if (label.includes("car space")) {
+                  property.parking = amount === "−" ? 0 : parseInt(amount, 10);
+                }
+              });
+
+              const propertyTypeWrapper =
+                ulPropertyDetailWrapper?.querySelector(":scope > p");
+
               if (
                 !pathIdentifier ||
                 !soldDateDescription ||
@@ -234,8 +261,8 @@ export class RealEstateScraper implements IScraper {
                 console.log("year is lesser than 2022, stop scraping.");
                 shouldStop = true;
               }
-
-              if (!propertyId || !price || !soldDate) {
+              const propertyType = propertyTypeWrapper?.textContent;
+              if (!propertyId || !price || !soldDate || !propertyType) {
                 return;
               }
 
@@ -250,10 +277,13 @@ export class RealEstateScraper implements IScraper {
                 State: "SA",
                 Postcode: postcode,
                 SoldDate: soldDate,
+                Bed: property.bed,
+                Bath: property.bath,
+                Parking: property.parking,
+                Type: propertyType,
               };
               records.push(data);
             });
-
             return { results: records, shouldStop };
           },
           postcode,
@@ -268,7 +298,7 @@ export class RealEstateScraper implements IScraper {
         allResults = allResults.concat(results);
 
         if (shouldStop) {
-          this.logger.info(
+          this.logger.warning(
             `Stopping scraping as soldDate is before the year 2022.`
           );
           stopScraping = true;
@@ -293,6 +323,7 @@ export class RealEstateScraper implements IScraper {
         await this.save(allResults, postcode, batchNumber);
       }
       if (browser) browser.close();
+      this.logger.info("Browser closed.");
     }
   }
   private async save(
@@ -304,6 +335,12 @@ export class RealEstateScraper implements IScraper {
       try {
         const outputDir = resolve(__dirname, `../../results/${this.name}`);
         await fs.mkdir(outputDir, { recursive: true });
+
+        if (data.length === 0) {
+          this.logger.warning(`No data to save for postcode ${postcode}`);
+          return;
+        }
+
         const csv = Papa.unparse(data);
         const csvPath = join(
           outputDir,
@@ -324,5 +361,5 @@ export class RealEstateScraper implements IScraper {
 
 // if (import.meta.main) {
 //   const scraper = new RealEstateScraper();
-//   scraper.scrape("5033");
+//   scraper.scrape("5000");
 // }

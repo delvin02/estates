@@ -1,4 +1,3 @@
-import puppeteer from "puppeteer";
 import {
   BASE_URL,
   CITY_STATE_POSTCODE__ID,
@@ -7,36 +6,47 @@ import {
   SOLD_LISTING__PATH,
   SOLD_PRICE_TAG__ID,
   UNIT_STREET__ID,
+  PROPERTY_FEATURES_CARD_WRAPPER__ID,
+  PROPERTY_FEATURES_WRAPPER__ID,
+  PROPERTY_FEATURE_ELEMENT__ID,
+  PROPERTY_FEATURE_TYPE__ID,
 } from "../../constants/domain";
 import type { IScraper, PropertyDetail } from "../@interfaces";
 import { ChalkLogger } from "../helper/chalk-logger";
 import { promises as fs } from "fs";
 import { join, resolve } from "path";
 import Papa from "papaparse";
+import { connect } from "puppeteer-real-browser";
+import { Mutex } from "async-mutex";
+
 export class DomainScraper implements IScraper {
   public name = "domain";
   private readonly logger = new ChalkLogger();
   private readonly batchSize = 1000;
+  private saveMutex = new Mutex();
 
   async scrape(postcode: string): Promise<void> {
     let allResults: PropertyDetail[] = [];
     let batchNumber: number = 1;
-    let browser;
+
+    let { page, browser } = await connect({
+      headless: false,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+
     try {
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
+      // const page = await browser.newPage();
 
-      const page = await browser.newPage();
-
-      await page.setRequestInterception(true);
-      page.on("request", (request) => {
-        if (request.isInterceptResolutionHandled()) return;
-        if (request.url().endsWith(".png") || request.url().endsWith(".jpg"))
-          request.abort();
-        else request.continue();
-      });
+      // await page.setRequestInterception(true);
+      // page.on("request", (request) => {
+      //   if (request.isInterceptResolutionHandled()) return;
+      //   if (request.url().endsWith(".png") || request.url().endsWith(".jpg"))
+      //     request.abort();
+      //   else request.continue();
+      // });
 
       let pageNumber: number = 1;
 
@@ -47,7 +57,9 @@ export class DomainScraper implements IScraper {
           `Scraping Page ${pageNumber} for Postcode: ${postcode}`
         );
 
-        const response = await page.goto(url, { waitUntil: "networkidle2" });
+        const response = await page.goto(url, {
+          waitUntil: "domcontentloaded",
+        });
 
         if (response && response.status() === 400) {
           this.logger.info(
@@ -74,7 +86,11 @@ export class DomainScraper implements IScraper {
             UNIT_STREET__ID,
             CITY_STATE_POSTCODE__ID,
             SOLD_PRICE_TAG__ID,
-            PROPERTY_LISTING_RESULT__ID
+            PROPERTY_LISTING_RESULT__ID,
+            PROPERTY_FEATURES_CARD_WRAPPER__ID,
+            PROPERTY_FEATURES_WRAPPER__ID,
+            PROPERTY_FEATURE_TYPE__ID,
+            PROPERTY_FEATURE_ELEMENT__ID
           ) => {
             function separateUnitAndStreet(fullAddress: string): {
               unit: string;
@@ -122,8 +138,57 @@ export class DomainScraper implements IScraper {
               return data
                 .replace(/<!--[\s\S]*?-->/g, "")
                 .replace(/&nbsp;/g, " ")
+                .replace(/\/span/g, "")
                 .replace(/[^\w\s\/\-]|_/g, "")
                 .trim();
+            }
+
+            function getPropertyFeature(
+              amount: string,
+              type: string
+            ): { bed?: number; bath?: number; parking?: number } {
+              let result: { bed?: number; bath?: number; parking?: number } =
+                {};
+
+              switch (type.toLowerCase()) {
+                case "beds":
+                case "bed":
+                  result.bed = parseInt(amount, 10);
+                  break;
+                case "baths":
+                case "bath":
+                  if (amount === "−") {
+                    result.bath = 0;
+                  } else {
+                    result.bath = parseInt(amount, 10);
+                  }
+                  break;
+                case "parking":
+                  if (amount === "−") {
+                    result.parking = 0;
+                  } else {
+                    result.parking = parseInt(amount, 10);
+                  }
+                  break;
+                default:
+                  break;
+              }
+
+              return result;
+            }
+
+            function extractPropertyType(propertyType: string): string | null {
+              if (propertyType.toLowerCase().includes("apartment")) {
+                return "apartment";
+              } else if (propertyType.toLowerCase().includes("house")) {
+                return "house";
+              } else if (propertyType.toLowerCase().includes("villa")) {
+                return "villa";
+              } else if (propertyType.toLowerCase().includes("townhouse")) {
+                return "townhouse";
+              } else {
+                return null;
+              }
             }
 
             const ul = document.querySelector(
@@ -147,12 +212,17 @@ export class DomainScraper implements IScraper {
                 `div[${SOLD_PRICE_TAG__ID}]`
               );
 
+              const divPropertyFeatureCardWrapper = li.querySelector(
+                `div[${PROPERTY_FEATURES_CARD_WRAPPER__ID}]`
+              );
+
               if (
                 !divPriceWrapper ||
                 !divAddressLine1 ||
                 !divAddressLine2 ||
                 !hrefWrapper ||
-                !divSoldDateWrapper
+                !divSoldDateWrapper ||
+                !divPropertyFeatureCardWrapper
               )
                 return;
 
@@ -169,6 +239,58 @@ export class DomainScraper implements IScraper {
                 cleanInnerHtml(divSoldDateWrapper.innerHTML)
               );
 
+              const propertyFeatureWrapper =
+                divPropertyFeatureCardWrapper.querySelector(
+                  `div[${PROPERTY_FEATURES_WRAPPER__ID}]`
+                );
+
+              let propertyType = null;
+              console.log(divPropertyFeatureCardWrapper);
+
+              const propertyTypeContainer =
+                divPropertyFeatureCardWrapper?.querySelectorAll("div")[2];
+              console.log("test", propertyTypeContainer);
+
+              const propertyTypeWrapper =
+                propertyTypeContainer?.querySelector("span");
+
+              if (!propertyTypeWrapper?.textContent) {
+                return;
+              }
+              propertyType = extractPropertyType(
+                propertyTypeWrapper?.textContent?.trim()
+              );
+
+              const featureElements =
+                propertyFeatureWrapper?.querySelectorAll(":scope > span");
+              let features: { bed?: number; bath?: number; parking?: number } =
+                {};
+              featureElements?.forEach((container) => {
+                const spanFeatureElement = container?.querySelector(
+                  `span[${PROPERTY_FEATURE_ELEMENT__ID}]`
+                );
+                const featureNumber = spanFeatureElement
+                  ? spanFeatureElement?.firstChild?.textContent?.trim()
+                  : "";
+                const featureType = container?.querySelector(
+                  `span[${PROPERTY_FEATURE_TYPE__ID}]`
+                );
+
+                const featureTypeText = featureType?.innerHTML
+                  .trim()
+                  .toLowerCase();
+
+                if (!featureNumber || !featureTypeText) {
+                  return;
+                }
+                const featureData = getPropertyFeature(
+                  featureNumber,
+                  featureTypeText
+                );
+
+                features = { ...features, ...featureData };
+              });
+
               if (!soldDate || !postcode) {
                 return;
               }
@@ -184,6 +306,10 @@ export class DomainScraper implements IScraper {
                   State: state,
                   Postcode: postcode,
                   SoldDate: soldDate,
+                  Bed: features.bed ?? 0,
+                  Bath: features.bath ?? 0,
+                  Parking: features.parking ?? 0,
+                  Type: propertyType,
                 };
                 records.push(data);
               }
@@ -194,9 +320,12 @@ export class DomainScraper implements IScraper {
           UNIT_STREET__ID,
           CITY_STATE_POSTCODE__ID,
           SOLD_PRICE_TAG__ID,
-          PROPERTY_LISTING_RESULT__ID
+          PROPERTY_LISTING_RESULT__ID,
+          PROPERTY_FEATURES_CARD_WRAPPER__ID,
+          PROPERTY_FEATURES_WRAPPER__ID,
+          PROPERTY_FEATURE_TYPE__ID,
+          PROPERTY_FEATURE_ELEMENT__ID
         );
-
         allResults = allResults.concat(results);
 
         if (allResults.length >= this.batchSize) {
@@ -206,14 +335,17 @@ export class DomainScraper implements IScraper {
         }
 
         pageNumber++;
-      }
 
-      if (allResults.length > 0) {
-        await this.save(allResults, postcode, batchNumber);
+        // sleep to make it less obvious
+        await new Promise((r) => setTimeout(r, 2000));
       }
     } catch (error) {
       this.logger.error(`Error while scraping postcode ${postcode}: ${error}`);
     } finally {
+      if (allResults.length > 0) {
+        await this.save(allResults, postcode, batchNumber);
+        allResults = [];
+      }
       if (browser) await browser.close();
       this.logger.info("Browser closed.");
     }
@@ -224,25 +356,34 @@ export class DomainScraper implements IScraper {
     postcode: string,
     batchNumber: number
   ): Promise<void> {
-    try {
-      const outputDir = resolve(__dirname, `../../results/${this.name}`);
-      await fs.mkdir(outputDir, { recursive: true });
+    await this.saveMutex.runExclusive(async () => {
+      try {
+        const outputDir = resolve(__dirname, `../../results/${this.name}`);
+        await fs.mkdir(outputDir, { recursive: true });
 
-      if (data.length === 0) {
-        this.logger.warning(`No data to save for postcode ${postcode}`);
-        return;
+        if (data.length === 0) {
+          this.logger.warning(`No data to save for postcode ${postcode}`);
+          return;
+        }
+
+        const csv = Papa.unparse(data);
+        const csvPath = join(
+          outputDir,
+          `domain-${postcode}-batch-${batchNumber}.csv`
+        );
+
+        await fs.writeFile(csvPath, csv);
+        this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
+      } catch (error) {
+        this.logger.error(
+          `Error saving data for postcode ${postcode}: ${error}`
+        );
       }
-
-      const csv = Papa.unparse(data);
-      const csvPath = join(
-        outputDir,
-        `domain-${postcode}-batch-${batchNumber}.csv`
-      );
-
-      await fs.writeFile(csvPath, csv);
-      this.logger.info(`Data for postcode ${postcode} saved to: ${csvPath}`);
-    } catch (error) {
-      this.logger.error(`Error saving data for postcode ${postcode}: ${error}`);
-    }
+    });
   }
 }
+
+// if (import.meta.main) {
+//   const scraper = new DomainScraper();
+//   scraper.scrape("5000");
+// }

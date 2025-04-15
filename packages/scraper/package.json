@@ -1,5 +1,5 @@
 {
-  "name": "scraper",
+  "name": "@estates/scraper",
   "module": "index.ts",
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "@estates/constants": "*",
     "@types/cheerio": "^0.22.35",
     "@types/papaparse": "^5.3.15",
     "@types/puppeteer": "^7.0.4",

@@ -3,11 +3,6 @@ export interface IScraper {
   scrape(postcode: string): Promise<void>;
 }
 
-export interface PostcodeArea {
-  postcode: string;
-  suburbs: string[];
-}
-
 export interface PropertyDetail {
   Url: string;
   PathIdentifier: string;
@@ -22,6 +17,11 @@ export interface PropertyDetail {
   Postcode: string;
 
   SoldDate: string;
+
+  Bed?: number;
+  Bath?: number;
+  Parking?: number;
+  Type: string | null;
 }
 
 export interface ProxyInfo {

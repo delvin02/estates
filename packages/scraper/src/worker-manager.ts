@@ -1,9 +1,9 @@
-import { POSTCODE_AREAS } from "./postcode-areas";
 import type { IScraper, PropertyDetail } from "./@interfaces";
 import { promises as fs } from "fs";
 import { join, resolve } from "path";
 import Papa from "papaparse";
 import { ChalkLogger } from "./helper/chalk-logger";
+import { POSTCODE_AREAS } from "@estates/constants";
 
 export class WorkerManager {
   private readonly logger = new ChalkLogger();
