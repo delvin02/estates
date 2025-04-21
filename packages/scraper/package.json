@@ -3,7 +3,8 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "scrape:domain": "bun run src/index.ts"
+    "scrape:domain": "bun run src/index.ts",
+    "merge": "bun run src/csv-merger.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

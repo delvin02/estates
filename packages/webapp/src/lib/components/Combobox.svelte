@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Combobox } from 'bits-ui';
 	import { ChevronsUpDownIcon } from 'lucide-svelte';
-	import { ChevronDown, Search } from 'lucide-svelte';
+	import { Search } from 'lucide-svelte';
 	import { POSTCODE_AREAS } from '@estates/constants';
 	import { derived, writable } from 'svelte/store';
 	import { ChevronsDown, ChevronsUp } from '@lucide/svelte';

@@ -1,0 +1,68 @@
+<!-- <script module lang="ts">
+	import BarChart from './BarChart.svelte';
+
+	import { defineMeta } from '@storybook/addon-svelte-csf';
+
+	const { Story } = defineMeta({
+		component: BarChart,
+		title: 'Charts/Barchart',
+		tags: ['autodocs'],
+		argTypes: {
+			labels: {
+				control: 'object',
+				description: 'Labels for the chart (e.g., months, categories).',
+				defaultValue: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+			},
+			datasetLabels: {
+				control: 'object',
+				description: 'Labels for each dataset series.',
+				defaultValue: ['Series 1', 'Series 2']
+			},
+			data: {
+				control: 'object',
+				description: 'The dataset values (array of arrays).',
+				defaultValue: [
+					[10, 20, 30, 40, 50, 60],
+					[15, 25, 35, 45, 55, 65]
+				]
+			},
+			options: {
+				control: 'object',
+				description: 'Chart.js options object.',
+				defaultValue: { scales: { y: { beginAtZero: true } } }
+			},
+			className: {
+				control: 'text',
+				description: 'Additional CSS classes for the canvas element.'
+			}
+		}
+	});
+</script>
+
+<Story
+	name="Default"
+	args={{
+		labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+		datasetLabels: ['Dataset A', 'Dataset B'],
+		data: [
+			[10, 25, 15, 40, 30, 50],
+			[20, 30, 25, 35, 45, 55]
+		],
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			plugins: {
+				title: {
+					display: true,
+					text: 'Default Bar Chart'
+				}
+			},
+			scales: {
+				y: {
+					beginAtZero: true
+				}
+			}
+		},
+		className: 'h-64 w-full'
+	}}
+></Story> -->

@@ -63,7 +63,7 @@
 				container: mapContainer,
 				style: 'mapbox://styles/delvin02/cm54y8h6t00i301rj2nif6b2a',
 				center: [138.582080438000048, -34.915374045999954],
-				zoom: 12,
+				zoom: 12
 			});
 
 			map.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -110,7 +110,7 @@
 <div class="flex min-h-full flex-col gap-4">
 	<h1>Map</h1>
 
-	<div id="map" bind:this={mapContainer} class=" max-h-full h-96 w-full"></div>
+	<div id="map" bind:this={mapContainer} class=" h-96 max-h-full w-full"></div>
 </div>
 
 <style>
