@@ -1,7 +1,8 @@
-<!-- <script module lang="ts">
+<script module lang="ts">
 	import BarChart from './BarChart.svelte';
-
 	import { defineMeta } from '@storybook/addon-svelte-csf';
+	// Removed import { writable } from 'svelte/store';
+	// Removed import { $state } from 'svelte'; // If you explicitly imported $state here
 
 	const { Story } = defineMeta({
 		component: BarChart,
@@ -11,12 +12,12 @@
 			labels: {
 				control: 'object',
 				description: 'Labels for the chart (e.g., months, categories).',
-				defaultValue: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+				defaultValue: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] // Still good for Controls panel default
 			},
 			datasetLabels: {
 				control: 'object',
 				description: 'Labels for each dataset series.',
-				defaultValue: ['Series 1', 'Series 2']
+				defaultValue: ['Series 1', 'Series 2'] // Still good for Controls panel default
 			},
 			data: {
 				control: 'object',
@@ -24,14 +25,14 @@
 				defaultValue: [
 					[10, 20, 30, 40, 50, 60],
 					[15, 25, 35, 45, 55, 65]
-				]
+				] // Still good for Controls panel default
 			},
 			options: {
 				control: 'object',
 				description: 'Chart.js options object.',
-				defaultValue: { scales: { y: { beginAtZero: true } } }
+				defaultValue: { scales: { y: { beginAtZero: true } } } // Still good for Controls panel default
 			},
-			className: {
+			class: {
 				control: 'text',
 				description: 'Additional CSS classes for the canvas element.'
 			}
@@ -42,6 +43,7 @@
 <Story
 	name="Default"
 	args={{
+		// Pass the default data structures directly
 		labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
 		datasetLabels: ['Dataset A', 'Dataset B'],
 		data: [
@@ -63,6 +65,6 @@
 				}
 			}
 		},
-		className: 'h-64 w-full'
+		class: 'w-full'
 	}}
-></Story> -->
+></Story>

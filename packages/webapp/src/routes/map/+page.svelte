@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import { PUBLIC_MAPBOX_ACCESS_TOKEN } from '$env/static/public';
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
@@ -133,4 +133,4 @@
 		font-family: 'Open Sans', sans-serif;
 		padding: 10px;
 	}
-</style>
+</style> -->

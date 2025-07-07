@@ -31,7 +31,7 @@
     "@neoconfetti/svelte": "^2.0.0",
     "@playwright/test": "^1.49.1",
     "@storybook/addon-essentials": "^8.6.12",
-    "@storybook/addon-svelte-csf": "^4.2.0",
+    "@storybook/addon-svelte-csf": "^5.0.0-next.28",
     "@storybook/blocks": "^8.6.12",
     "@storybook/experimental-addon-test": "^8.6.12",
     "@storybook/svelte": "^8.6.12",
