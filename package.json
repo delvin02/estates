@@ -1,5 +1,5 @@
 {
-  "name": "estates-monorepo",
+  "name": "estates",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
@@ -15,5 +15,9 @@
     "dev": "cd packages/app && bun run dev",
     "build": "cd packages/app && bun run build",
     "lint": "cd packages/app && bun run lint"
+  },
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "date-fns": "^4.1.0"
   }
 }

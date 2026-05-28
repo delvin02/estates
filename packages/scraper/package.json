@@ -1,0 +1,27 @@
+{
+  "name": "@estates/scraper",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "scrape:domain": "bun run src/index.ts",
+    "merge": "bun run src/csv-merger.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@estates/constants": "*",
+    "@types/cheerio": "^0.22.35",
+    "@types/papaparse": "^5.3.15",
+    "@types/puppeteer": "^7.0.4",
+    "async-mutex": "^0.5.0",
+    "chalk": "^5.4.1",
+    "chrome-launcher": "^1.1.2",
+    "papaparse": "^5.4.1",
+    "puppeteer": "23.3.1",
+    "puppeteer-real-browser": "^1.3.22"
+  }
+}
